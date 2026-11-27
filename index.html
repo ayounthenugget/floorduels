@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floor Duels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout idea: one narrow stage column. Board and duel are stacked cards under a slim brand bar. */
+  --bg:#0a0c16; --panel:#141830; --panel2:#1c2145; --line:#2b3262; --grid:rgba(120,130,220,.09);
+  --ink:#f3f1ea; --dim:#9aa3d1; --gold:#ffd23f; --good:#3ddc97; --bad:#ff5d73;
+  --display:'Chakra Petch','Arial Narrow',system-ui,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --emoji:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:16px/1.4 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px}
+.app{max-width:520px;margin:0 auto;padding:12px 16px 48px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 14px}
+.brand{font:700 20px var(--display);letter-spacing:.14em;text-transform:uppercase}
+.brand b{color:var(--gold)}
+.status{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dim)}
+.status .room{font:700 14px var(--display);letter-spacing:.2em;color:var(--ink)}
+.banner{background:var(--bad);color:#1a0006;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:600}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn{min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-weight:600}
+.btn:hover:not(:disabled){border-color:var(--dim)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#1a1500;font-family:var(--display);letter-spacing:.06em;text-transform:uppercase;font-size:17px}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:10px}
+.btn.block{width:100%}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.dim{color:var(--dim)}
+.lbl{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:600}
+input[type=text]{min-height:48px;width:100%;border-radius:12px;border:1px solid var(--line);background:#0e1226;padding:0 14px;font-size:16px}
+select{min-height:44px;border-radius:10px;border:1px solid var(--line);background:#0e1226;padding:0 10px;max-width:100%}
+
+/* home */
+.hero{padding:10px 0 6px}
+.hero h1{font-size:44px;line-height:1;letter-spacing:.04em;text-transform:uppercase}
+.hero h1 span{color:var(--gold)}
+.hero p{margin:10px 0 0;color:var(--dim);max-width:34ch}
+.join{display:flex;gap:8px}
+.join input{text-transform:uppercase;letter-spacing:.35em;font:700 22px var(--display);text-align:center}
+.rules summary{cursor:pointer;font-weight:600}
+.rules ol{margin:10px 0 0;padding-left:20px;color:var(--dim)}
+.rules li{margin:4px 0}
+
+/* lobby */
+.codecard{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.code{font:700 40px var(--display);letter-spacing:.25em;color:var(--gold);line-height:1}
+.plrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.plrow:first-child{border-top:0}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.plname{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:13px;padding:4px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+.pill.warn{color:var(--gold);border-color:#5a4d12}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-btn{min-height:40px;padding:0 12px;border-radius:99px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.chip-btn[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:#1a1500}
+.chip-btn:disabled{opacity:.35;cursor:not-allowed}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;min-height:42px;border:0;background:transparent;cursor:pointer;font-weight:600}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--panel2);color:var(--gold)}
+.seg button:disabled{cursor:default}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lrow{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow .sub{grid-column:2;display:flex;gap:8px}
+.lrow select{flex:1}
+.custom .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:12px 0}
+.custom .it{background:#0e1226;border:1px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+.custom .it img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px}
+.custom .it input{min-height:34px;font-size:14px;padding:0 8px;border-radius:8px}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:4px}
+.tile{aspect-ratio:1;border-radius:9px;background:var(--c);color:#0a0c16;display:grid;place-items:center;position:relative;border:0;padding:0;font-family:var(--emoji);font-size:clamp(18px,6.2vw,32px);line-height:1}
+.tile .tn{position:absolute;right:5px;bottom:2px;font:700 11px var(--display)}
+.tile.legal{box-shadow:0 0 0 3px var(--gold);cursor:pointer;animation:glow 1.4s ease-in-out infinite alternate}
+.tile.dim{opacity:.4}
+.tile.sel{transform:scale(1.07);box-shadow:0 0 0 4px #fff;animation:none;z-index:1}
+.tile.won{animation:pop .5s ease-out}
+.turn{margin:2px 0 12px}
+.turn h2{font-size:24px;line-height:1.15}
+.turn p{margin:4px 0 0;color:var(--dim)}
+.score{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sc{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:14px}
+.sc b{font-family:var(--display)}
+.sc.out{opacity:.4;text-decoration:line-through}
+.confirm{position:sticky;bottom:12px;margin-top:14px;display:flex;align-items:center;gap:12px;justify-content:space-between;background:var(--panel2);border:1px solid var(--gold);border-radius:14px;padding:10px 12px}
+.confirm span{font-weight:600}
+
+/* duel */
+.clocks{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch}
+.pc{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;border-top:6px solid var(--c);min-width:0}
+.pc.on{border-color:var(--c);box-shadow:0 0 26px -6px var(--c)}
+.pc .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .tm{font:700 40px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.pc .sq{font-size:12px;color:var(--dim)}
+.pc.low .tm{color:var(--bad);animation:pulse .5s ease-in-out infinite alternate}
+.vsb{align-self:center;font:700 14px var(--display);color:var(--dim);letter-spacing:.1em}
+.catline{text-align:center;margin:12px 0 0;font:600 15px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.stage{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;margin:10px 0 12px;aspect-ratio:1/.85;display:grid;place-items:center;overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px}
+.pic{font-family:var(--emoji);font-size:clamp(110px,40vw,190px);line-height:1;display:grid;place-items:center;width:100%;height:100%}
+.pic.txt{font-family:var(--display);font-weight:700;font-size:clamp(44px,14vw,84px);text-align:center;padding:0 16px;line-height:1.05;text-wrap:balance}
+.pic img{max-width:100%;max-height:100%;object-fit:contain}
+.pic.swap{animation:pop .25s ease-out}
+.flash{position:absolute;inset:0;display:grid;place-items:center;font:700 120px var(--display);opacity:0;pointer-events:none}
+.flash.ok{color:var(--good)} .flash.no{color:var(--bad)}
+.flash.show{animation:flash .7s ease-out}
+.reveal{position:absolute;left:12px;right:12px;bottom:12px;text-align:center;background:var(--bad);color:#1a0006;border-radius:12px;padding:8px;font-weight:700;display:none}
+.reveal.show{display:block}
+.ready{position:absolute;inset:0;background:rgba(10,12,22,.9);display:none;place-content:center;text-align:center;gap:6px}
+.ready.on{display:grid}
+.ready .rn{font:700 96px/1 var(--display);color:var(--gold)}
+.ready .rt{font-weight:600;color:var(--dim)}
+.ans{display:flex;gap:8px}
+.ans input{min-height:54px;font-size:18px}
+.ans .btn{min-height:54px;flex:none}
+.wait{text-align:center;color:var(--dim);padding:14px 0;font-weight:600}
+.shake{animation:shake .3s}
+
+/* result / over */
+.result{text-align:center}
+.result h2{font-size:34px;margin:6px 0}
+.result p{color:var(--dim);margin:0 0 16px}
+.big{font-size:56px;line-height:1}
+
+@keyframes glow{from{box-shadow:0 0 0 3px var(--gold)}to{box-shadow:0 0 0 3px var(--gold),0 0 18px 2px rgba(255,210,63,.55)}}
+@keyframes pulse{from{opacity:1}to{opacity:.55}}
+@keyframes pop{0%{transform:scale(.7)}70%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes flash{0%{opacity:0;transform:scale(.6)}25%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(1.2)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+[hidden]{display:none!important}
+
+</style>
+</head>
+<body>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<div class="app" id="app"></div>
+<script>
+// Built-in categories. Item format: "<picture> answer|alias|alias"
+// Picture is an emoji, or "txt:Some Text" for a text-clue card.
+const BANK = [
+{id:'animals', name:'Animals', ico:'🦒', items:[
+"🦒 giraffe","🐘 elephant","🦓 zebra","🦘 kangaroo","🐨 koala","🦥 sloth","🦔 hedgehog","🦦 otter","🦈 shark","🐙 octopus","🦑 squid","🐢 turtle|tortoise","🦎 lizard|gecko","🐍 snake","🦜 parrot","🦉 owl","🦚 peacock","🦩 flamingo","🐧 penguin","🦅 eagle","🦆 duck","🐝 bee|honeybee|honey bee","🦋 butterfly","🐌 snail","🦂 scorpion","🦀 crab","🦞 lobster","🐬 dolphin","🐋 whale","🐪 camel","🦏 rhino|rhinoceros","🦛 hippo|hippopotamus","🐅 tiger","🦁 lion","🐻 bear","🐼 panda","🦊 fox","🐺 wolf","🦌 deer","🐿️ squirrel|chipmunk","🦇 bat","🐓 rooster|chicken|cock","🐑 sheep","🐐 goat","🐖 pig"]},
+{id:'produce', name:'Fruit & Veg', ico:'🍎', items:[
+"🍎 apple","🍌 banana","🍇 grapes|grape","🍉 watermelon","🍊 orange|tangerine|mandarin","🍋 lemon","🍍 pineapple","🥭 mango","🍑 peach","🍒 cherry|cherries","🍓 strawberry","🥝 kiwi|kiwi fruit","🍅 tomato","🥥 coconut","🥑 avocado","🍆 eggplant|aubergine","🥔 potato","🥕 carrot","🌽 corn|maize|corn on the cob","🌶️ chili|chilli|chili pepper|hot pepper|pepper","🥒 cucumber","🥦 broccoli","🧄 garlic","🧅 onion","🍄 mushroom","🥬 lettuce|leafy green|bok choy|cabbage","🍐 pear","🥜 peanut|peanuts","🍈 melon|honeydew|cantaloupe"]},
+{id:'food', name:'Food & Drink', ico:'🍕', items:[
+"🍕 pizza","🍔 burger|hamburger|cheeseburger","🌭 hot dog|hotdog","🌮 taco","🌯 burrito|wrap","🥪 sandwich","🍟 fries|french fries|chips","🍿 popcorn","🍩 donut|doughnut","🍪 cookie|biscuit","🎂 cake|birthday cake","🧁 cupcake","🍦 ice cream|soft serve","🍫 chocolate|chocolate bar","🍬 candy|sweet|sweets","🍭 lollipop","🍣 sushi","🍜 ramen|noodles|noodle soup|pho","🍝 spaghetti|pasta","🍞 bread|loaf","🥐 croissant","🥞 pancakes|pancake","🧇 waffle|waffles","🥓 bacon","🍳 egg|fried egg","🧀 cheese","🥨 pretzel","🍙 rice ball|onigiri","🥟 dumpling|dumplings|gyoza","☕ coffee","🍵 tea|green tea|matcha","🥛 milk","🍯 honey","🥧 pie","🥗 salad"]},
+{id:'sports', name:'Sports & Games', ico:'⚽', items:[
+"⚽ soccer|football|soccer ball","🏀 basketball","🏈 american football|football","⚾ baseball","🎾 tennis","🏐 volleyball","🏉 rugby","🎱 pool|billiards|8 ball|eight ball|snooker","🏓 ping pong|table tennis|pingpong","🏸 badminton","🏒 hockey|ice hockey","🥊 boxing","🥋 martial arts|karate|judo|taekwondo","⛳ golf","🏹 archery|bow and arrow","🎣 fishing","🛹 skateboard|skateboarding","⛸️ ice skating|skating|figure skating","🎿 skiing|ski|skis","🏂 snowboarding|snowboard","🏋️ weightlifting|lifting|weights|powerlifting","🚴 cycling|biking|bike riding","🏊 swimming","🤺 fencing","🎯 darts|bullseye|dartboard","🎳 bowling","🏄 surfing","🧗 climbing|rock climbing"]},
+{id:'vehicles', name:'Vehicles', ico:'🚗', items:[
+"🚗 car|automobile","🚕 taxi|cab","🚌 bus","🚑 ambulance","🚒 fire truck|fire engine","🚓 police car|cop car","🚜 tractor","🛵 scooter|moped|vespa","🏍️ motorcycle|motorbike","🚲 bicycle|bike","🛴 kick scooter|scooter","🚂 steam train|locomotive|train","🚁 helicopter","✈️ airplane|plane|aeroplane|jet","🚀 rocket|spaceship","🛸 ufo|flying saucer","🚢 ship|cruise ship|boat","⛵ sailboat|sailing boat|yacht","🛶 canoe|kayak","🚤 speedboat|motorboat","🚠 cable car|gondola|ski lift","🚛 truck|semi|lorry|big rig","🏎️ race car|racing car|formula 1|f1","🚐 minibus|van","🛰️ satellite","🪂 parachute","🚋 tram|streetcar|trolley","🚇 subway|metro|underground"]},
+{id:'nature', name:'Nature & Weather', ico:'🌋', items:[
+"🌋 volcano","🌈 rainbow","⛈️ thunderstorm|storm|lightning storm","🌪️ tornado|twister","❄️ snowflake|snow","☃️ snowman","☀️ sun|sunny","🌙 crescent moon|moon","🌊 wave|tsunami|ocean wave","🏔️ mountain|snowy mountain","🏝️ island|desert island|tropical island","🏜️ desert","🌵 cactus","🌴 palm tree|palm","🌲 evergreen|pine tree|pine|fir tree|christmas tree","🌸 cherry blossom|blossom|sakura","🌻 sunflower","🌹 rose","🌷 tulip","🍁 maple leaf|leaf","🍂 fallen leaves|autumn leaves|autumn|fall","☔ umbrella|rain|raindrops","🔥 fire|flame","💧 water drop|droplet|drop|water","⭐ star","☄️ comet","🌍 earth|globe|planet earth|world","🪐 saturn|ringed planet|planet","🌌 galaxy|milky way"]},
+{id:'music', name:'Music', ico:'🎹', items:[
+"🎹 piano|keyboard|synth","🎸 guitar|electric guitar","🎻 violin|fiddle","🥁 drums|drum|drum kit","🎺 trumpet","🎷 saxophone|sax","🪕 banjo","🎤 microphone|mic|karaoke","🎧 headphones|headset","🔔 bell","🎼 sheet music|musical score|music score|staff|treble clef","🎵 music note|note|musical note","📻 radio","💿 cd|compact disc|disc","🎶 music notes|notes|music","🎛️ mixer|control knobs|knobs|dj","📯 post horn|horn|bugle","🎙️ studio microphone|podcast mic|podcast"]},
+{id:'jobs', name:'Jobs', ico:'👷', items:[
+"👩‍🚒 firefighter|fireman|firewoman","👮 police officer|police|cop|policeman","🧑‍🍳 chef|cook","👩‍🏫 teacher|professor","🧑‍⚕️ doctor|nurse|physician","🧑‍🔬 scientist|chemist","🧑‍🚀 astronaut","🧑‍✈️ pilot","🧑‍🌾 farmer","🧑‍🔧 mechanic","🧑‍💻 programmer|developer|coder|software engineer|technologist","🧑‍🎤 singer|rock star|rockstar|musician","🧑‍🎨 artist|painter","🕵️ detective|spy|investigator","💂 royal guard|guard","👷 construction worker|builder|hard hat","🥷 ninja","🧑‍⚖️ judge"]},
+{id:'science', name:'Science', ico:'🧬', items:[
+"🧬 dna","🔬 microscope","🔭 telescope","🧪 test tube","⚗️ alembic|flask|distilling flask|chemistry","🧫 petri dish|petri","💉 syringe|needle|injection|vaccine","🦠 microbe|bacteria|germ|virus|bacterium","🧲 magnet","⚛️ atom","🌡️ thermometer","💊 pill|capsule|medicine","🩺 stethoscope","🩸 blood|blood drop","🦴 bone","🦷 tooth","🧠 brain","👁️ eye","⚡ lightning|electricity|bolt|lightning bolt","🔋 battery","💡 light bulb|lightbulb|bulb","🧮 abacus","🔌 plug|power plug"]},
+{id:'places', name:'Places & Buildings', ico:'🗽', items:[
+"🗽 statue of liberty|lady liberty","🗼 tokyo tower|eiffel tower","🏰 castle|european castle","🏯 japanese castle|castle","⛩️ torii|torii gate|shinto shrine|shrine","🕌 mosque","🕍 synagogue","⛪ church","🎡 ferris wheel","🎢 roller coaster|rollercoaster","🌉 bridge|golden gate|bridge at night","🏛️ classical building|parthenon|greek temple|columns|courthouse|museum","🗿 moai|easter island statue|easter island head|statue","🏟️ stadium|arena","🏠 house|home","🏥 hospital","🏦 bank","🏫 school","🏭 factory","🗻 mount fuji|fuji|mt fuji","🎠 carousel|merry go round|merry-go-round","⛲ fountain","🏨 hotel","🗾 japan|map of japan"]},
+{id:'clothes', name:'Clothes', ico:'👗', items:[
+"👗 dress","👕 t-shirt|tshirt|shirt|tee","👖 jeans|pants|trousers","🧥 coat|jacket","🧣 scarf","🧤 gloves|glove|mittens","🧦 socks|sock","👟 sneaker|sneakers|running shoe|trainer|shoe|tennis shoe","👠 high heel|high heels|heels|stiletto","👢 boot|boots","🥾 hiking boot|hiking boots|boot","👡 sandal|sandals","🎩 top hat|hat","🧢 cap|baseball cap","👒 sun hat|straw hat|hat","👓 glasses|eyeglasses|spectacles","🕶️ sunglasses|shades","👑 crown","💍 ring|diamond ring","👜 handbag|purse|bag","🎒 backpack|schoolbag|bookbag|rucksack","👔 tie|necktie|shirt and tie|dress shirt","🩳 shorts","👙 bikini|swimsuit","🥼 lab coat","🦺 safety vest|vest|high vis","⌚ watch|wristwatch","💼 briefcase","🎓 graduation cap|grad cap|mortarboard|cap and gown"]},
+{id:'fantasy', name:'Fantasy & Spooky', ico:'🧙', items:[
+"🐉 dragon","🦄 unicorn","🧙 wizard|mage|sorcerer|witch","🧛 vampire|dracula","🧟 zombie","🧜 mermaid|merman|merperson","🧚 fairy|pixie","🧞 genie","🧝 elf","👻 ghost","👽 alien|extraterrestrial","🤖 robot","💀 skull|skeleton","🎃 jack o lantern|jack-o-lantern|pumpkin","🦖 t rex|trex|tyrannosaurus|dinosaur|tyrannosaurus rex","🦕 brontosaurus|sauropod|dinosaur|diplodocus|apatosaurus","🔮 crystal ball|fortune teller","🗡️ dagger|knife|sword","⚔️ crossed swords|swords|sword fight","🛡️ shield","👹 ogre|oni|demon","👺 goblin|tengu","🏴‍☠️ pirate flag|jolly roger|pirate","🦸 superhero|hero","🦹 supervillain|villain|super villain"]},
+{id:'stuff', name:'Everyday Stuff', ico:'🔧', items:[
+"🔧 wrench|spanner","🔨 hammer","🪓 axe","⚙️ gear|cog|settings","🔩 nut and bolt|bolt|screw|nut","✂️ scissors","📎 paperclip|paper clip","📌 pushpin|thumbtack|pin|tack","📏 ruler","🧹 broom","🧺 laundry basket|basket","🔑 key","🔒 lock|padlock","🚪 door","🪑 chair","🛏️ bed","🛋️ couch|sofa","🚿 shower","🛁 bathtub|bath|tub","💣 bomb","🧯 fire extinguisher","⏰ alarm clock|clock","🔦 flashlight|torch","📷 camera","📺 tv|television","☎️ telephone|phone|landline|old phone","💻 laptop|computer","⌨️ keyboard","🖱️ computer mouse|mouse","🖨️ printer","💾 floppy disk|floppy|save","🕹️ joystick","🎮 video game controller|controller|gamepad|game controller","📚 books|stack of books|book|library","🔍 magnifying glass|magnifier|search","⛏️ pickaxe|pick|mining","🧸 teddy bear|teddy","🪁 kite","🎈 balloon","🎁 gift|present","🧳 luggage|suitcase","☂️ umbrella"]},
+{id:'capitals', name:'Capital Cities', ico:'🏙️', items:[
+"txt:France|paris","txt:Japan|tokyo","txt:Italy|rome","txt:Spain|madrid","txt:Germany|berlin","txt:Canada|ottawa","txt:Australia|canberra","txt:Brazil|brasilia","txt:Egypt|cairo","txt:Kenya|nairobi","txt:Thailand|bangkok","txt:Vietnam|hanoi","txt:South Korea|seoul","txt:China|beijing|peking","txt:India|new delhi|delhi","txt:Mexico|mexico city","txt:Argentina|buenos aires","txt:Peru|lima","txt:Russia|moscow","txt:Turkey|ankara","txt:Greece|athens","txt:Portugal|lisbon","txt:Ireland|dublin","txt:Norway|oslo","txt:Sweden|stockholm","txt:Philippines|manila","txt:Indonesia|jakarta","txt:New Zealand|wellington","txt:Cuba|havana","txt:Poland|warsaw","txt:Austria|vienna","txt:Morocco|rabat"]},
+{id:'elements', name:'Element Symbols', ico:'⚛️', items:[
+"txt:H|hydrogen","txt:He|helium","txt:Li|lithium","txt:C|carbon","txt:N|nitrogen","txt:O|oxygen","txt:F|fluorine","txt:Ne|neon","txt:Na|sodium","txt:Mg|magnesium","txt:Al|aluminum|aluminium","txt:Si|silicon","txt:P|phosphorus","txt:S|sulfur|sulphur","txt:Cl|chlorine","txt:Ar|argon","txt:K|potassium","txt:Ca|calcium","txt:Fe|iron","txt:Cu|copper","txt:Zn|zinc","txt:Ag|silver","txt:Sn|tin","txt:I|iodine","txt:Au|gold","txt:Hg|mercury","txt:Pb|lead","txt:U|uranium","txt:Pt|platinum","txt:Ni|nickel"]}
+];
+
+// ---- Floor Duels engine: pure logic, no DOM. ----
+const COLORS = ['#ff6b6b','#4dabf7','#51cf66','#ffa94d','#b197fc','#22d3c5','#f783ac','#d0ea5c'];
+const MAXP = 8;
+
+function parseItem(s){
+  if (s.startsWith('txt:')) { const i = s.indexOf('|'); return {pic: s.slice(0, i), ans: s.slice(i + 1).split('|')}; }
+  const i = s.indexOf(' ');
+  return {pic: s.slice(0, i), ans: s.slice(i + 1).split('|')};
+}
+const CAT = {};
+for (const c of BANK) CAT[c.id] = {id: c.id, name: c.name, ico: c.ico, list: c.items.map(parseItem)};
+
+function norm(s){
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/&/g, ' and ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(a|an|the) /, '');
+}
+function lev(a, b){
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({length: n + 1}, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function judge(text, answers){
+  const t = norm(text).replace(/ /g, '');
+  if (!t) return false;
+  for (const a of answers) {
+    const n = norm(a).replace(/ /g, '');
+    if (!n) continue;
+    if (t === n) return true;
+    const d = n.length >= 9 ? 2 : n.length >= 5 ? 1 : 0;
+    if (d && Math.abs(t.length - n.length) <= d && lev(t, n) <= d) return true;
+  }
+  return false;
+}
+
+function shuffle(a, rnd){ rnd = rnd || Math.random; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function dims(total){ let r = 1; for (let i = 1; i * i <= total; i++) if (total % i === 0) r = i; return [r, total / r]; } // [rows, cols]
+function ownerAt(g, i){ return typeof g === 'string' ? g.charCodeAt(i) - 48 : g[i]; }
+function isAdj(cols, a, b){ return a !== b && Math.abs(a % cols - b % cols) <= 1 && Math.abs(Math.floor(a / cols) - Math.floor(b / cols)) <= 1; }
+function legalSquares(gr, cols, ch){
+  const n = gr.length, out = [];
+  for (let i = 0; i < n; i++) {
+    if (ownerAt(gr, i) === ch) continue;
+    for (let j = 0; j < n; j++) if (ownerAt(gr, j) === ch && isAdj(cols, i, j)) { out.push(i); break; }
+  }
+  return out;
+}
+function countSq(gr, np){ const c = Array(np).fill(0); for (let i = 0; i < gr.length; i++) c[ownerAt(gr, i)]++; return c; }
+
+function createEngine(publish, clock, rnd){
+  clock = clock || Date.now; rnd = rnd || Math.random;
+  const epoch = Math.random().toString(36).slice(2, 7);
+  const custom = {};            // custom photo categories: id -> {id,name,ico,list}
+  let decks = {}, cur = null, lastT = 0, readyAt = 0, resultAt = 0, evn = 0;
+  let S = fresh([], {k: 2, s: 45}, 0);
+
+  function fresh(pl, o, v){
+    return {e: epoch, v, ph: 'lobby', o, pl, cx: [], cols: 0, rows: 0, gr: [], ch: -1, df: -1, sq: -1,
+      rem: [0, 0], tn: 0, run: 0, rdy: 0, pic: '', ev: null, win: -1, los: -1, tk: 0};
+  }
+  const catOf = id => CAT[id] || custom[id];
+  function snapshot(){
+    S.cx = Object.values(custom).map(c => ({id: c.id, name: c.name, ico: c.ico}));
+    if (S.ph === 'ready') S.rdy = Math.max(0, readyAt - clock());
+    return JSON.parse(JSON.stringify(Object.assign({}, S, {gr: Array.isArray(S.gr) ? S.gr.join('') : S.gr})));
+  }
+  function bump(){ S.v++; publish(snapshot()); }
+  function advance(){ if (S.ph === 'duel' && S.run) { const t = clock(); S.rem[S.tn] -= t - lastT; lastT = t; } }
+  function nextPic(){
+    const cid = S.pl[S.df].cat, cat = catOf(cid);
+    let d = decks[cid];
+    if (!d || d.i >= d.order.length) {
+      const order = shuffle([...cat.list.keys()], rnd);
+      if (d && order.length > 1 && order[0] === d.order[d.order.length - 1]) { const t = order[0]; order[0] = order[order.length - 1]; order[order.length - 1] = t; }
+      d = decks[cid] = {order, i: 0};
+    }
+    cur = cat.list[d.order[d.i++]];
+    S.pic = cur.pic;
+  }
+  function canStart(){ return S.ph === 'lobby' && S.pl.length >= 2 && S.pl.every(p => p.cat && catOf(p.cat)); }
+  function finish(){
+    const lo = S.tn === 0 ? S.ch : S.df, wi = S.tn === 0 ? S.df : S.ch;
+    S.run = 0; S.rem[S.tn] = 0;
+    let tk = 0;
+    S.gr = S.gr.map(o => { if (o === lo) { tk++; return wi; } return o; });
+    S.tk = tk; S.win = wi; S.los = lo; S.ph = 'result'; S.ev = null;
+    resultAt = clock() + 4500;
+    bump();
+  }
+
+  return {
+    get state(){ return S; },
+    addCategory(c){ // {id,name,ico,items:[{pic,ans:[...]}]}
+      if (!c || !c.id || !c.items || !c.items.length) return;
+      custom[c.id] = {id: c.id, name: String(c.name).slice(0, 18), ico: c.ico || '📷', list: c.items};
+      if (S.ph === 'lobby') bump();
+    },
+    removeCategory(id){ delete custom[id]; S.pl = S.pl.map(p => p.cat === id ? Object.assign({}, p, {cat: ''}) : p); if (S.ph === 'lobby') bump(); },
+    setRoster(list){
+      if (S.ph !== 'lobby') return;
+      const seen = new Set(), pl = [];
+      for (const p of list.slice(0, MAXP)) {
+        let cat = p.cat && catOf(p.cat) ? p.cat : '';
+        if (cat && seen.has(cat)) cat = '';
+        if (cat) seen.add(cat);
+        pl.push({id: String(p.id).slice(0, 12), nm: String(p.nm || '').trim().slice(0, 12) || 'Player ' + (pl.length + 1), cat});
+      }
+      if (JSON.stringify(pl) !== JSON.stringify(S.pl)) { S.pl = pl; bump(); }
+    },
+    setOpts(o){
+      if (S.ph !== 'lobby') return;
+      const k = [2, 3, 4].includes(o.k) ? o.k : S.o.k, s = [30, 45, 60].includes(o.s) ? o.s : S.o.s;
+      if (k !== S.o.k || s !== S.o.s) { S.o = {k, s}; bump(); }
+    },
+    canStart,
+    start(){
+      if (!canStart()) return false;
+      const n = S.pl.length, total = n * S.o.k, [r, c] = dims(total);
+      decks = {};
+      const g = []; for (let i = 0; i < n; i++) for (let j = 0; j < S.o.k; j++) g.push(i);
+      shuffle(g, rnd);
+      S.rows = r; S.cols = c; S.gr = g; S.ch = Math.floor(rnd() * n); S.df = -1; S.sq = -1;
+      S.ph = 'pick'; S.ev = null; S.win = -1; S.los = -1; S.tk = 0;
+      bump(); return true;
+    },
+    newGame(){ const v = S.v; S = fresh(S.pl, S.o, v); bump(); },
+    sync(){ bump(); },
+    act(id, a){
+      const idx = S.pl.findIndex(p => p.id === id);
+      if (idx < 0 || !a) return;
+      if (a.k === 'c') {
+        if (S.ph !== 'pick' || idx !== S.ch) return;
+        const sq = a.sq | 0;
+        if (!legalSquares(S.gr, S.cols, S.ch).includes(sq)) return;
+        S.sq = sq; S.df = S.gr[sq]; S.ph = 'ready';
+        S.rem = [S.o.s * 1000, S.o.s * 1000]; S.tn = 0; S.run = 0; S.pic = ''; S.ev = null;
+        readyAt = clock() + 3000;
+        bump(); return;
+      }
+      if (S.ph !== 'duel' || !S.run) return;
+      if (idx !== (S.tn === 0 ? S.ch : S.df)) return;
+      advance();
+      if (S.rem[S.tn] <= 0) { finish(); return; }
+      if (a.k === 'a') {
+        if (typeof a.t !== 'string') return;
+        if (judge(a.t.slice(0, 60), cur.ans)) { S.ev = {k: 'ok', n: ++evn}; S.tn = 1 - S.tn; nextPic(); }
+        else S.ev = {k: 'no', n: ++evn};
+        bump();
+      } else if (a.k === 'j') { // judged correct by a human (spoken answers)
+        S.ev = {k: 'ok', n: ++evn}; S.tn = 1 - S.tn; nextPic(); bump();
+      } else if (a.k === 'p') {
+        S.rem[S.tn] -= 3000;
+        const shown = cur.ans[0];
+        S.ev = {k: 'pass', n: ++evn, a: shown};
+        if (S.rem[S.tn] <= 0) { finish(); return; }
+        nextPic(); bump();
+      }
+    },
+    tick(){
+      const t = clock();
+      if (S.ph === 'ready' && t >= readyAt) { S.ph = 'duel'; S.run = 1; S.tn = 0; lastT = t; S.ev = null; nextPic(); bump(); }
+      else if (S.ph === 'duel' && S.run) { advance(); if (S.rem[S.tn] <= 0) finish(); }
+      else if (S.ph === 'result' && t >= resultAt) {
+        if (new Set(S.gr).size === 1) S.ph = 'over';
+        else { S.ph = 'pick'; S.ch = S.win; S.df = -1; S.sq = -1; S.ev = null; }
+        bump();
+      }
+    }
+  };
+}
+
+if (typeof module !== 'undefined') module.exports = {createEngine, judge, norm, dims, legalSquares, countSq, CAT, BANK, parseItem};
+
+// ---- Standalone build only: a tiny "room" built on PeerJS (WebRTC). ----
+// Star topology. Whoever creates the room code is the hub: it relays everyone's
+// presence to everyone, matching the room API the app already uses.
+(function(){
+  if (window.claude) return;
+  window.FD_WEB = true;
+
+  function join(name){
+    return new Promise((resolve, reject) => {
+      if (!window.Peer) return reject({code: 'upstream_error', message: 'PeerJS did not load'});
+      const hubId = 'fduel-' + String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+      let settled = false;
+      const done = (fn, v) => { if (!settled) { settled = true; fn(v); } };
+      const asGuest = () => {
+        const p = new Peer();
+        p.on('error', e => done(reject, {code: 'upstream_error', message: e.type || String(e)}));
+        p.on('open', id => {
+          const c = p.connect(hubId, {reliable: true, serialization: 'json'});
+          c.on('open', () => done(resolve, makeRoom(p, id, false, c)));
+          c.on('error', e => done(reject, {code: 'upstream_error', message: String(e)}));
+          setTimeout(() => done(reject, {code: 'upstream_error', message: 'timeout'}), 9000);
+        });
+      };
+      const p = new Peer(hubId);
+      p.on('open', () => done(resolve, makeRoom(p, hubId, true, null)));
+      p.on('error', e => {
+        if (e.type === 'unavailable-id') { try { p.destroy(); } catch (x) {} asGuest(); }
+        else done(reject, {code: 'upstream_error', message: e.type || String(e)});
+      });
+    });
+  }
+
+  function makeRoom(peer, myId, isHub, hubConn){
+    const fns = new Set();
+    let mine = {}, list = [], timer = 0, closed = false;
+    const conns = new Map();           // hub only: id -> conn
+    const pmap = new Map([[myId, mine]]); // hub only: id -> presence
+    const merge = (o, patch) => { for (const k in patch) { if (patch[k] === null) delete o[k]; else o[k] = patch[k]; } };
+    const notify = () => fns.forEach(f => { try { f({}); } catch (e) { console.error(e); } });
+    const snapshotList = () => Array.from(pmap.entries());
+    function flush(){
+      timer = 0; if (closed) return;
+      const msg = {t: 'list', list: snapshotList()};
+      conns.forEach(c => { if (c.open) { try { c.send(msg); } catch (e) {} } });
+      notify();
+    }
+    const schedule = () => { if (!timer) timer = setTimeout(flush, 40); };
+
+    if (isHub) {
+      peer.on('connection', c => {
+        c.on('open', () => { conns.set(c.peer, c); pmap.set(c.peer, {}); schedule(); });
+        c.on('data', d => { if (d && d.t === 'pres' && pmap.has(c.peer)) { merge(pmap.get(c.peer), d.patch); schedule(); } });
+        const gone = () => { if (conns.delete(c.peer)) { pmap.delete(c.peer); schedule(); } };
+        c.on('close', gone); c.on('error', gone);
+      });
+    } else {
+      hubConn.on('data', d => { if (d && d.t === 'list') { list = d.list; notify(); } });
+      const lost = () => { list = []; notify(); };
+      hubConn.on('close', lost); hubConn.on('error', lost);
+    }
+
+    return {
+      presence(patch){
+        merge(mine, patch);
+        if (isHub) { pmap.set(myId, mine); schedule(); }
+        else if (hubConn.open) hubConn.send({t: 'pres', patch: JSON.parse(JSON.stringify(patch, (k, v) => v === undefined ? null : v))});
+        return Promise.resolve();
+      },
+      peers(){
+        const src = isHub ? snapshotList() : list;
+        const out = src.filter(([id]) => id !== myId).map(([id, p]) => ({peer: id, isMe: false, presence: Object.freeze(Object.assign({}, p))}));
+        out.unshift({peer: myId, isMe: true, presence: Object.freeze(Object.assign({}, mine))});
+        return out;
+      },
+      onPeers(fn){ fns.add(fn); setTimeout(() => { try { fn({}); } catch (e) { console.error(e); } }, 0); return () => fns.delete(fn); },
+      leave(){ closed = true; clearTimeout(timer); fns.clear(); try { peer.destroy(); } catch (e) {} return Promise.resolve(); }
+    };
+  }
+
+  const assets = {upload: blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res({pic: r.result}); r.onerror = rej; r.readAsDataURL(blob); })};
+  window.claude = {use: async n => n === 'room' ? {join} : n === 'assets' ? assets : null};
+})();
+
+// ---- Floor Duels UI + wiring ----
+(function(){
+'use strict';
+
+function h(tag, attrs){
+  const e = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, '');
+    else e.setAttribute(k, v);
+  }
+  for (const c of Array.prototype.slice.call(arguments, 2).flat(9)) {
+    if (c == null || c === false) continue;
+    e.append(c.nodeType ? c : document.createTextNode(c));
+  }
+  return e;
+}
+const store = {
+  get(k, s){ try { return (s ? sessionStorage : localStorage).getItem(k); } catch (e) { return null; } },
+  set(k, v, s){ try { (s ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
+};
+const uid = () => Math.random().toString(36).slice(2, 10);
+const fmt = ms => { ms = Math.max(0, ms); const s = ms / 1000; return s >= 60 ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : s.toFixed(1); };
+const catInfo = (s, id) => CAT[id] || ((s && s.cx) || []).find(c => c.id === id) || {name: '?', ico: '❔'};
+function renderPic(el, pic){
+  el.className = 'pic'; el.replaceChildren();
+  if (pic.startsWith('txt:')) { el.classList.add('txt'); el.textContent = pic.slice(4); }
+  else if (pic.startsWith('/_blob/') || pic.startsWith('data:image/')) el.append(h('img', {src: pic, alt: 'Picture to identify'}));
+  else el.textContent = pic;
+}
+
+const A = {
+  mode: 'home', eng: null, room: null, api: undefined, assets: null,
+  pid: store.get('fl_pid', true) || uid(), host: false, code: '',
+  snap: null, at: 0, snapKey: '', kind: '', ui: null, sel: -1, evSeen: -1,
+  local: [], lid: 0, acN: 0, order: [], acSeen: {}, tickT: null, hostGone: false, joinT: null, leaveArm: 0,
+  custom: [], spoken: false
+};
+store.set('fl_pid', A.pid, true);
+try { A.custom = JSON.parse(store.get('fl_custom') || '[]'); } catch (e) { A.custom = []; }
+
+const $app = document.getElementById('app');
+const $top = h('div', {class: 'top'});
+const $banner = h('div', {class: 'banner', role: 'alert', hidden: true});
+const $screen = h('div', {});
+const $toast = h('div', {class: 'toast', role: 'status'});
+$app.append($top, $banner, $screen);
+let toastT;
+function toast(msg){
+  $banner.hidden = false; $banner.textContent = msg; $banner.style.background = 'var(--gold)'; $banner.style.color = '#1a1500';
+  clearTimeout(toastT); toastT = setTimeout(() => { if (!A.hostGone) $banner.hidden = true; }, 4000);
+}
+
+function drawTop(){
+  const right = h('div', {class: 'status'});
+  if (A.mode !== 'home') {
+    if (A.mode !== 'local') right.append(h('span', {class: 'room', text: A.code}));
+    else right.append(h('span', {text: 'Pass & play'}));
+    const b = h('button', {class: 'btn ghost sm', type: 'button', text: 'Leave'});
+    b.addEventListener('click', () => {
+      if (Date.now() - A.leaveArm < 3000) leave();
+      else { A.leaveArm = Date.now(); b.textContent = 'Sure?'; setTimeout(() => { b.textContent = 'Leave'; }, 3000); }
+    });
+    right.append(b);
+  }
+  $top.replaceChildren(h('div', {class: 'brand', html: null}, 'Floor', h('b', {text: 'Duels'})), right);
+}
+
+function setScreen(root){ $screen.replaceChildren(root); }
+
+// ---------- helpers on snapshots ----------
+function myIdx(s){ return A.mode === 'local' ? -1 : s.pl.findIndex(p => p.id === A.pid); }
+function canAs(s, idx){ return A.mode === 'local' ? true : !!(s.pl[idx] && s.pl[idx].id === A.pid); }
+
+function send(a){
+  const s = A.snap;
+  if (A.mode === 'local') {
+    const who = a.k === 'c' ? s.ch : (s.tn === 0 ? s.ch : s.df);
+    A.eng.act(s.pl[who].id, a);
+  } else if (A.mode === 'host') A.eng.act(A.pid, a);
+  else {
+    A.acN = Math.max(A.acN + 1, Date.now());
+    pres({ac: Object.assign({n: A.acN}, a)});
+  }
+}
+function pres(p){ try { const r = A.room.presence(p); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+
+// ---------- board / score ----------
+function board(s, o){
+  o = o || {};
+  const g = h('div', {class: 'board', style: '--cols:' + s.cols});
+  for (let i = 0; i < s.gr.length; i++) {
+    const ow = ownerAt(s.gr, i), p = s.pl[ow], ci = catInfo(s, p.cat);
+    const live = o.legal && o.legal.has(i);
+    const t = h(live ? 'button' : 'div', {
+      class: 'tile' + (live ? ' legal' : '') + (o.legal && o.legal.size && !live ? ' dim' : '') + (o.sel === i ? ' sel' : '') + (o.hl === ow ? ' won' : ''),
+      style: '--c:' + COLORS[ow], type: live ? 'button' : null,
+      'aria-label': live ? 'Challenge ' + p.nm + ' in ' + ci.name : null
+    }, ci.ico.startsWith('/') ? '📷' : ci.ico, h('span', {class: 'tn', text: p.nm.slice(0, 1).toUpperCase()}));
+    if (live) t.addEventListener('click', () => o.onPick(i));
+    g.append(t);
+  }
+  return g;
+}
+function score(s){
+  const c = countSq(s.gr, s.pl.length);
+  return h('div', {class: 'score'}, s.pl.map((p, i) =>
+    h('div', {class: 'sc' + (c[i] ? '' : ' out'), style: '--c:' + COLORS[i]},
+      h('span', {class: 'dot'}), p.nm, h('b', {text: String(c[i])}), h('span', {text: catInfo(s, p.cat).ico}))));
+}
+
+// ---------- screens ----------
+const BUILD = {};
+
+BUILD.lobby = function(){
+  const local = A.mode === 'local', canEdit = local || A.host;
+  const E = {};
+  const root = h('div', {class: 'stack'});
+
+  if (!local) {
+    root.append(h('div', {class: 'card codecard'},
+      h('div', {}, h('div', {class: 'lbl', text: 'Room code'}), h('div', {class: 'code', text: A.code})),
+      h('button', {class: 'btn ghost sm', type: 'button', text: 'Copy invite', onclick: () => {
+        const txt = 'Join my Floor Duels game. Open the link and enter code ' + A.code;
+        try { navigator.clipboard.writeText(txt).then(() => toast('Invite copied'), () => toast('Code: ' + A.code)); } catch (e) { toast('Code: ' + A.code); }
+      }})));
+  }
+
+  // players
+  E.rows = h('div', {});
+  const rosterCard = h('div', {class: 'card'}, h('div', {class: 'lbl', text: 'Players'}), E.rows);
+  root.append(rosterCard);
+
+  function catOptions(){ return BANK.concat(A.custom).map(c => ({id: c.id, name: c.name, ico: c.ico})); }
+  function refreshSel(){
+    const taken = A.local.map(p => p.cat);
+    E.rows.querySelectorAll('select').forEach((sel, i) => {
+      sel.querySelectorAll('option').forEach(o => { o.disabled = !!o.value && taken.includes(o.value) && o.value !== A.local[i].cat; });
+    });
+  }
+  function syncLocal(){ A.eng.setRoster(A.local); refreshSel(); if (A.snap) E.update(A.snap); }
+  function drawLocal(){
+    E.rows.replaceChildren(...A.local.map((p, i) => {
+      const nm = h('input', {type: 'text', maxlength: 12, placeholder: 'Player ' + (i + 1), value: p.nm, 'aria-label': 'Name of player ' + (i + 1)});
+      nm.addEventListener('input', () => { p.nm = nm.value; syncLocal(); });
+      const sel = h('select', {'aria-label': 'Category for player ' + (i + 1)}, h('option', {value: '', text: 'Pick a category'}),
+        catOptions().map(c => h('option', {value: c.id, text: c.ico.startsWith('/') ? c.name : c.ico + ' ' + c.name})));
+      sel.value = p.cat;
+      sel.addEventListener('change', () => { p.cat = sel.value; syncLocal(); });
+      return h('div', {class: 'lrow'}, h('span', {class: 'dot', style: '--c:' + COLORS[i]}), nm,
+        h('div', {class: 'sub'}, sel, A.local.length > 2 ? h('button', {class: 'btn ghost sm', type: 'button', 'aria-label': 'Remove player ' + (i + 1), text: '✕', onclick: () => { A.local.splice(i, 1); drawLocal(); syncLocal(); }}) : null));
+    }));
+    refreshSel();
+    if (E.add) E.add.disabled = A.local.length >= MAXP;
+  }
+  if (local) {
+    E.add = h('button', {class: 'btn ghost sm', type: 'button', text: '+ Add player', onclick: () => { A.local.push({id: 'L' + (++A.lid), nm: '', cat: ''}); drawLocal(); syncLocal(); }});
+    rosterCard.append(h('div', {style: 'margin-top:10px'}, E.add));
+    drawLocal();
+  } else {
+    E.nm = h('input', {type: 'text', maxlength: 12, placeholder: 'Your name', value: store.get('fl_nm') || '', 'aria-label': 'Your name'});
+    E.nm.addEventListener('input', () => { store.set('fl_nm', E.nm.value); pres({nm: E.nm.value}); });
+    E.chips = h('div', {class: 'chips'});
+    root.append(h('div', {class: 'card stack'}, h('div', {class: 'lbl', text: 'You'}), E.nm, h('div', {class: 'lbl', text: 'Pick your category'}), E.chips));
+  }
+
+  // options
+  function seg(label, vals, key, unit){
+    const wrap = h('div', {}, h('div', {class: 'lbl', text: label}));
+    const sg = h('div', {class: 'seg', role: 'group', 'aria-label': label, style: 'margin-top:6px'});
+    vals.forEach(v => sg.append(h('button', {type: 'button', 'data-v': v, text: v + unit, disabled: !canEdit, 'aria-pressed': 'false', onclick: () => {
+      const o = Object.assign({}, A.snap.o); o[key] = v; A.eng.setOpts(o);
+    }})));
+    wrap.append(sg); return wrap;
+  }
+  E.k = seg('Squares each', [2, 3, 4], 'k', '');
+  E.s = seg('Clock', [30, 45, 60], 's', 's');
+  root.append(h('div', {class: 'card optgrid'}, E.k, E.s));
+  if (local) {
+    const sg = h('div', {class: 'seg', role: 'group', 'aria-label': 'How answers work', style: 'margin-top:6px'});
+    const mkb = (txt, sp) => h('button', {type: 'button', text: txt, 'aria-pressed': String(A.spoken === sp), onclick: () => { A.spoken = sp; sg.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String((i === 1) === sp))); }});
+    sg.append(mkb('Type it', false), mkb('Say it out loud', true));
+    root.append(h('div', {class: 'card'}, h('div', {class: 'lbl', text: 'Answers'}), sg,
+      h('div', {class: 'dim', style: 'font-size:14px;margin-top:8px', text: 'Say it out loud: share your screen on a call. Players shout answers, you tap Correct or Pass.'})));
+  }
+
+  // custom photo categories (host / local, only where uploads are allowed)
+  if (canEdit && A.assets) root.append(customEditor(catOptions, () => { if (local) drawLocal(); if (A.snap) E.update(A.snap); }));
+
+  // start
+  E.hint = h('div', {class: 'dim', style: 'text-align:center'});
+  if (canEdit) E.start = h('button', {class: 'btn primary block', type: 'button', text: 'Start game', onclick: () => A.eng.start()});
+  root.append(canEdit ? h('div', {class: 'stack'}, E.start, E.hint) : E.hint);
+
+  E.update = function(s){
+    [E.k, E.s].forEach((w, n) => w.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === (n ? s.o.s : s.o.k)))));
+    const ok = s.pl.length >= 2 && s.pl.every(p => p.cat);
+    const msg = s.pl.length < 2 ? 'Need at least 2 players.' : !s.pl.every(p => p.cat) ? 'Everyone needs a category.' : s.pl.length * s.o.k + ' squares on the floor.';
+    if (canEdit) { E.start.disabled = !ok; E.hint.textContent = msg; }
+    else E.hint.textContent = 'Waiting for the host to start. ' + msg;
+    if (!local) {
+      const me = s.pl.find(p => p.id === A.pid);
+      E.rows.replaceChildren(...s.pl.map((p, i) => {
+        const ci = p.cat ? catInfo(s, p.cat) : null;
+        return h('div', {class: 'plrow'}, h('span', {class: 'dot', style: '--c:' + COLORS[i]}),
+          h('span', {class: 'plname', text: p.nm + (p.id === A.pid ? ' (you)' : '')}),
+          ci ? h('span', {class: 'pill', text: (ci.ico.startsWith('/') ? '' : ci.ico + ' ') + ci.name}) : h('span', {class: 'pill warn', text: 'no category'}));
+      }));
+      const all = BANK.map(c => ({id: c.id, name: c.name, ico: c.ico})).concat(s.cx || []);
+      E.chips.replaceChildren(...all.map(c => {
+        const takenBy = s.pl.find(p => p.cat === c.id);
+        const mine = takenBy && takenBy.id === A.pid;
+        return h('button', {class: 'chip-btn', type: 'button', 'aria-pressed': String(!!mine), disabled: !!takenBy && !mine,
+          onclick: () => pres({ct: mine ? '' : c.id})}, c.ico.startsWith('/') ? '' : c.ico, c.name);
+      }));
+    }
+  };
+  return {root, update: E.update};
+};
+
+function customEditor(catOptions, onChange){
+  const card = h('div', {class: 'card custom stack'});
+  const list = h('div', {});
+  const form = h('div', {class: 'stack', hidden: true});
+  const head = h('div', {class: 'row', style: 'justify-content:space-between'},
+    h('div', {}, h('div', {class: 'lbl', text: 'Photo categories'}), h('div', {class: 'dim', style: 'font-size:14px', text: 'Upload your own pictures, like the real show.'})));
+  const addBtn = h('button', {class: 'btn ghost sm', type: 'button', text: '+ New', onclick: () => { form.hidden = false; addBtn.hidden = true; nameIn.focus(); }});
+  head.append(addBtn);
+  card.append(head, list, form);
+
+  function drawList(){
+    list.replaceChildren(...A.custom.map(c => h('div', {class: 'plrow'}, h('span', {text: '📷'}),
+      h('span', {class: 'plname', text: c.name + ' · ' + c.items.length + ' photos'}),
+      h('button', {class: 'btn ghost sm', type: 'button', text: 'Delete', onclick: () => {
+        A.custom = A.custom.filter(x => x.id !== c.id); store.set('fl_custom', JSON.stringify(A.custom));
+        A.eng.removeCategory(c.id); onChange();
+        for (const p of A.local) if (p.cat === c.id) p.cat = '';
+        drawList(); if (A.mode === 'local') A.eng.setRoster(A.local);
+      }}))));
+  }
+  drawList();
+
+  const nameIn = h('input', {type: 'text', maxlength: 18, placeholder: 'Category name (e.g. Our Friend Group)', 'aria-label': 'Category name'});
+  const file = h('input', {type: 'file', accept: 'image/*', multiple: true, 'aria-label': 'Choose photos'});
+  const grid = h('div', {class: 'items'});
+  const info = h('div', {class: 'dim', style: 'font-size:14px', text: 'Pick at least 4 photos. Type the answer under each one. Use | between accepted answers.'});
+  const save = h('button', {class: 'btn primary block', type: 'button', text: 'Save category', disabled: true});
+  const cancel = h('button', {class: 'btn ghost block', type: 'button', text: 'Cancel', onclick: reset});
+  let pending = [];
+  function reset(){ pending.forEach(p => URL.revokeObjectURL(p.url)); pending = []; grid.replaceChildren(); file.value = ''; nameIn.value = ''; form.hidden = true; addBtn.hidden = false; save.disabled = true; save.textContent = 'Save category'; }
+  form.append(nameIn, file, info, grid, save, cancel);
+
+  async function shrink(f){
+    const bmp = await createImageBitmap(f);
+    const sc = Math.min(1, (window.FD_WEB ? 480 : 720) / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', window.FD_WEB ? 0.7 : 0.82));
+  }
+  file.addEventListener('change', async () => {
+    const files = Array.from(file.files || []).slice(0, 40 - pending.length);
+    for (const f of files) {
+      try {
+        const blob = await shrink(f);
+        const inp = h('input', {type: 'text', value: f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '), 'aria-label': 'Answer for ' + f.name});
+        const url = URL.createObjectURL(blob);
+        const it = {blob, url, inp};
+        pending.push(it);
+        grid.append(h('div', {class: 'it'}, h('img', {src: url, alt: ''}), inp));
+      } catch (e) { toast('Could not read ' + f.name); }
+    }
+    save.disabled = pending.length < 4;
+  });
+  save.addEventListener('click', async () => {
+    const name = nameIn.value.trim();
+    if (!name) { toast('Give the category a name'); nameIn.focus(); return; }
+    if (pending.length < 4) { toast('Add at least 4 photos'); return; }
+    save.disabled = true; const items = [];
+    try {
+      for (let i = 0; i < pending.length; i++) {
+        save.textContent = 'Uploading ' + (i + 1) + '/' + pending.length + '…';
+        const r = await A.assets.upload(pending[i].blob);
+        const ans = pending[i].inp.value.split('|').map(x => x.trim()).filter(Boolean);
+        if (!ans.length) throw new Error('Every photo needs an answer');
+        items.push({pic: r.pic || '/_blob/' + r.id, ans});
+      }
+    } catch (e) { toast('Upload failed: ' + (e && e.message ? e.message : 'try again')); save.disabled = false; save.textContent = 'Save category'; return; }
+    const cat = {id: 'c_' + uid(), name, ico: '📷', items};
+    A.custom.push(cat); store.set('fl_custom', JSON.stringify(A.custom));
+    A.eng.addCategory(cat);
+    reset(); drawList(); onChange();
+  });
+  return card;
+}
+
+BUILD.pick = function(){
+  const root = h('div', {});
+  return {root, update(s){
+    const c = s.ch, p = s.pl[c], control = canAs(s, c);
+    const legal = new Set(control ? legalSquares(s.gr, s.cols, c) : []);
+    if (!legal.has(A.sel)) A.sel = -1;
+    const kids = [
+      h('div', {class: 'turn'},
+        h('h2', {text: control ? (A.mode === 'local' ? p.nm + ', your move' : 'Your move') : p.nm + ' is choosing…'}),
+        h('p', {text: control ? 'Tap a glowing square next to yours to pick your opponent.' : 'Waiting for them to pick an opponent.'})),
+      board(s, {legal, sel: A.sel, onPick: i => { A.sel = A.sel === i ? -1 : i; A.ui.update(A.snap); }}),
+      score(s)
+    ];
+    if (A.sel >= 0) {
+      const o = s.pl[ownerAt(s.gr, A.sel)], ci = catInfo(s, o.cat);
+      kids.push(h('div', {class: 'confirm'}, h('span', {text: 'Challenge ' + o.nm + ' in ' + (ci.ico.startsWith('/') ? '' : ci.ico + ' ') + ci.name}),
+        h('button', {class: 'btn primary', type: 'button', text: 'Duel', onclick: () => { const sq = A.sel; A.sel = -1; send({k: 'c', sq}); }})));
+    }
+    root.replaceChildren(...kids);
+  }};
+};
+
+BUILD.duel = function(){
+  const E = {};
+  A.evSeen = -1;
+  function pcard(i){
+    E['p' + i] = h('div', {class: 'pc'}, E['n' + i] = h('div', {class: 'nm'}), E['t' + i] = h('div', {class: 'tm'}), E['q' + i] = h('div', {class: 'sq'}));
+    return E['p' + i];
+  }
+  E.inp = h('input', {type: 'text', 'aria-label': 'Your answer', placeholder: 'Type your answer', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'send'});
+  E.pass = h('button', {class: 'btn ghost', type: 'button', text: 'Pass −3s'});
+  E.go = h('button', {class: 'btn primary', type: 'submit', text: 'Go'});
+  E.okb = h('button', {class: 'btn primary', type: 'button', text: '✓ Correct', style: 'flex:1'});
+  E.peek = h('button', {class: 'btn ghost', type: 'button', text: 'Peek'});
+  E.form = h('form', {class: 'ans'}, E.inp, E.go, E.okb, E.peek, E.pass);
+  E.okb.addEventListener('click', () => send({k: 'j'}));
+  E.peek.addEventListener('click', () => {
+    const s = A.snap, id = s.pl[s.df].cat;
+    const list = CAT[id] ? CAT[id].list : ((A.custom.find(c => c.id === id) || {}).items || []);
+    const it = list.find(i => i.pic === s.pic);
+    E.reveal.textContent = 'Answer: ' + (it ? it.ans[0] : '?'); E.reveal.classList.add('show');
+    clearTimeout(revT); revT = setTimeout(() => E.reveal.classList.remove('show'), 2000);
+  });
+  E.wait = h('div', {class: 'wait'});
+  E.pic = h('div', {class: 'pic', 'aria-live': 'polite'});
+  E.flash = h('div', {class: 'flash', 'aria-hidden': 'true'});
+  E.reveal = h('div', {class: 'reveal'});
+  E.rn = h('div', {class: 'rn'}); E.rt = h('div', {class: 'rt'});
+  E.ready = h('div', {class: 'ready'}, E.rn, E.rt);
+  E.cat = h('div', {class: 'catline'});
+  const root = h('div', {},
+    h('div', {class: 'clocks'}, pcard(0), h('div', {class: 'vsb', text: 'VS'}), pcard(1)),
+    E.cat, h('div', {class: 'stage'}, E.pic, E.flash, E.reveal, E.ready), E.form, E.wait);
+  E.form.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const t = E.inp.value.trim(); if (!t) return;
+    E.inp.value = ''; send({k: 'a', t}); E.inp.focus();
+  });
+  E.pass.addEventListener('click', () => { send({k: 'p'}); if (!E.inp.hidden) E.inp.focus(); });
+  let lastPic = null, couldAct = false, revT = 0;
+
+  function ticker(){
+    const s = A.snap; if (!s) return;
+    const el = Math.max(0, performance.now() - A.at);
+    const r = s.rem.slice();
+    if (s.ph === 'duel' && s.run) r[s.tn] -= el;
+    [0, 1].forEach(i => {
+      E['t' + i].textContent = fmt(r[i]);
+      const active = s.ph === 'duel' && s.tn === i;
+      E['p' + i].classList.toggle('on', active);
+      E['p' + i].classList.toggle('low', active && r[i] < 10000);
+    });
+    if (s.ph === 'ready') E.rn.textContent = Math.max(1, Math.ceil((s.rdy - el) / 1000));
+  }
+
+  return {root, ticker, update(s){
+    const a = s.pl[s.ch], b = s.pl[s.df], cnt = countSq(s.gr, s.pl.length);
+    [[0, a, s.ch], [1, b, s.df]].forEach(([i, p, idx]) => {
+      E['n' + i].textContent = p.nm; E['p' + i].style.setProperty('--c', COLORS[idx]);
+      E['q' + i].textContent = cnt[idx] + (cnt[idx] === 1 ? ' square' : ' squares');
+    });
+    const ci = catInfo(s, b.cat);
+    E.cat.textContent = (ci.ico.startsWith('/') ? '' : ci.ico + ' ') + ci.name;
+    E.ready.classList.toggle('on', s.ph === 'ready');
+    E.rt.textContent = a.nm + ' vs ' + b.nm + ' · ' + ci.name;
+    if (s.pic !== lastPic) { lastPic = s.pic; if (s.pic) { renderPic(E.pic, s.pic); E.pic.classList.add('swap'); } else E.pic.replaceChildren(); }
+    if (s.ev && s.ev.n !== A.evSeen) {
+      A.evSeen = s.ev.n;
+      if (s.ev.k === 'pass') {
+        E.reveal.textContent = 'It was: ' + s.ev.a; E.reveal.classList.add('show');
+        clearTimeout(revT); revT = setTimeout(() => E.reveal.classList.remove('show'), 1800);
+      } else {
+        E.flash.textContent = s.ev.k === 'ok' ? '✓' : '✗';
+        E.flash.className = 'flash ' + s.ev.k; void E.flash.offsetWidth; E.flash.classList.add('show');
+        if (s.ev.k === 'no') { E.inp.classList.remove('shake'); void E.inp.offsetWidth; E.inp.classList.add('shake'); }
+      }
+    }
+    const active = s.tn === 0 ? s.ch : s.df, live = s.ph === 'duel';
+    const can = live && canAs(s, active);
+    E.form.hidden = !can;
+    const sp = A.mode === 'local' && A.spoken;
+    E.inp.hidden = sp; E.go.hidden = sp; E.okb.hidden = !sp; E.peek.hidden = !sp;
+    E.wait.hidden = can;
+    E.wait.textContent = s.ph === 'ready' ? 'Get ready…' : s.pl[active].nm + ' is answering…';
+    if (A.mode === 'local' && can) E.inp.placeholder = s.pl[active].nm + ': type your answer';
+    if (can && !couldAct && !sp) setTimeout(() => E.inp.focus(), 30);
+    couldAct = can;
+    ticker();
+  }};
+};
+
+BUILD.result = function(){
+  const root = h('div', {class: 'stack'});
+  return {root, update(s){
+    const w = s.pl[s.win], l = s.pl[s.los];
+    root.replaceChildren(
+      h('div', {class: 'card result'}, h('div', {class: 'big', text: '🏆'}), h('h2', {text: w.nm + ' wins'}),
+        h('p', {text: l.nm + ' is out. ' + w.nm + ' takes ' + s.tk + ' square' + (s.tk === 1 ? '' : 's') + '.'})),
+      board(s, {hl: s.win}), score(s));
+  }};
+};
+
+BUILD.over = function(){
+  const root = h('div', {class: 'stack'});
+  return {root, update(s){
+    const w = s.pl[s.win];
+    const again = (A.mode === 'local' || A.host)
+      ? h('button', {class: 'btn primary block', type: 'button', text: 'Play again', onclick: () => A.eng.newGame()})
+      : h('div', {class: 'dim', style: 'text-align:center', text: 'Waiting for the host to start another round.'});
+    root.replaceChildren(
+      h('div', {class: 'card result'}, h('div', {class: 'big', text: '👑'}), h('h2', {text: w.nm + ' owns the Floor'}),
+        h('p', {text: 'Every square is ' + w.nm + "'s. Nobody left to challenge."})),
+      board(s, {hl: s.win}), score(s), again);
+  }};
+};
+
+function showConnecting(msg){ setScreen(h('div', {class: 'card', style: 'text-align:center'}, h('h2', {text: msg}))); A.kind = 'wait'; A.ui = null; }
+
+function render(){
+  const s = A.snap; if (!s) return;
+  const kind = s.ph === 'lobby' ? 'lobby' : (s.ph === 'ready' || s.ph === 'duel') ? 'duel' : s.ph;
+  if (kind !== A.kind || !A.ui) { A.kind = kind; A.sel = -1; A.ui = BUILD[kind](); setScreen(A.ui.root); }
+  A.ui.update(s);
+}
+function onSnap(s){ A.snap = s; A.at = performance.now(); render(); }
+
+// ---------- home ----------
+function showHome(){
+  A.mode = 'home'; A.kind = 'home'; A.ui = null; A.snap = null; drawTop(); $banner.hidden = true;
+  const codeIn = h('input', {type: 'text', maxlength: 4, placeholder: 'CODE', 'aria-label': 'Room code', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false'});
+  const hostB = h('button', {class: 'btn primary block', type: 'button', text: 'Host a game', onclick: startHost});
+  const joinB = h('button', {class: 'btn', type: 'button', text: 'Join', onclick: () => startJoin(codeIn.value)});
+  const note = h('div', {class: 'dim', style: 'font-size:14px', text: 'Checking online play…'});
+  codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') startJoin(codeIn.value); });
+  showHome.sync = () => {
+    const on = !!A.api;
+    hostB.disabled = false; joinB.disabled = false;
+    note.textContent = A.api === undefined ? 'Checking online play…' : on ? (window.FD_WEB ? 'Host gets a 4-letter code. Friends open this page on their own phone and type it in.' : 'Everyone needs the link open in Claude. The host picks a room code, friends type it in.') : "Online play isn't available in this view. Use pass & play.";
+  };
+  showHome.sync();
+  setScreen(h('div', {class: 'stack'},
+    h('div', {class: 'hero'}, h('h1', {}, 'Floor ', h('span', {text: 'Duels'})), h('p', {text: 'Picture duels for you and your friends. Win the duel, take their squares.'})),
+    h('div', {class: 'card stack'}, hostB, h('div', {class: 'join'}, codeIn, joinB), note),
+    h('div', {class: 'card'}, h('button', {class: 'btn block', type: 'button', text: 'Pass & play on this device', onclick: startLocal})),
+    h('details', {class: 'card rules'}, h('summary', {text: 'How it works'}),
+      h('ol', {}, ...[
+        'Everyone picks a category. Squares are shared out at random on the floor.',
+        'The player in control picks a neighbor to duel. The duel is in the other player\'s category.',
+        'Each player has a clock. Name the picture to hand the turn over, and your clock stops.',
+        'Stuck? Pass costs 3 seconds and shows the answer. Run out of time and you lose.',
+        'Winner takes every square the loser owned, then picks the next duel. Last one standing owns the Floor.'
+      ].map(t => h('li', {text: t}))))));
+}
+
+// ---------- modes ----------
+function startEngine(publishExtra){
+  A.eng = createEngine(s => { onSnap(s); if (publishExtra) publishExtra(s); });
+  for (const c of A.custom) A.eng.addCategory(c);
+  clearInterval(A.tickT);
+  A.tickT = setInterval(() => { A.eng.tick(); if (A.ui && A.ui.ticker) A.ui.ticker(); }, 100);
+}
+
+function startLocal(){
+  A.mode = 'local'; A.host = true; A.code = '';
+  A.local = [{id: 'L1', nm: '', cat: ''}, {id: 'L2', nm: '', cat: ''}]; A.lid = 2;
+  drawTop();
+  startEngine(null);
+  A.eng.setRoster(A.local); A.eng.sync();
+}
+
+function makeCode(){ const L = 'ABCDEFGHJKMNPQRSTUVWXYZ'; let c = ''; for (let i = 0; i < 4; i++) c += L[Math.floor(Math.random() * L.length)]; return c; }
+
+function offlineMsg(){
+  if (A.api) return true;
+  toast(A.api === undefined ? 'Still connecting. Try again in a few seconds.' : (window.FD_WEB ? "Online play couldn't start. Check your connection and reload." : "Online play isn't available for your account on this link. You need the link shared with you and to be signed in to Claude."));
+  return false;
+}
+async function startHost(){
+  if (!offlineMsg()) return;
+  const code = makeCode();
+  try { A.room = await A.api.join('fl-' + code.toLowerCase()); } catch (e) { toast('Could not open a room: ' + ((e && (e.code || e.message)) || 'unknown error')); return; }
+  A.mode = 'host'; A.host = true; A.code = code; A.order = [A.pid]; A.acSeen = {};
+  drawTop();
+  pres({pid: A.pid, nm: store.get('fl_nm') || '', ct: '', h: 1});
+  startEngine(s => pres({g: s}));
+  A.room.onPeers(hostPeers);
+  hostPeers(); A.eng.sync();
+}
+function hostPeers(){
+  if (!A.room || !A.eng) return;
+  const by = {};
+  for (const p of A.room.peers()) { const pr = p.presence; if (pr && pr.pid) { by[pr.pid] = pr; if (!A.order.includes(pr.pid)) A.order.push(pr.pid); } }
+  A.eng.setRoster(A.order.filter(id => by[id]).map(id => ({id, nm: by[id].nm || '', cat: by[id].ct || ''})));
+  for (const id in by) {
+    const ac = by[id].ac;
+    if (ac && ac.n > (A.acSeen[id] || 0)) { A.acSeen[id] = ac.n; if (id !== A.pid) A.eng.act(id, ac); }
+  }
+}
+
+async function startJoin(raw){
+  const code = String(raw || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (code.length !== 4) { toast('Room codes have 4 letters'); return; }
+  if (!offlineMsg()) return;
+  try { A.room = await A.api.join('fl-' + code.toLowerCase()); } catch (e) { toast('Could not join: ' + ((e && (e.code || e.message)) || 'unknown error')); return; }
+  A.mode = 'guest'; A.host = false; A.code = code; A.snapKey = ''; A.hostGone = false;
+  drawTop(); showConnecting('Looking for room ' + code + '…');
+  pres({pid: A.pid, nm: store.get('fl_nm') || '', ct: ''});
+  A.room.onPeers(guestPeers);
+  guestPeers();
+  A.joinT = setTimeout(() => { if (!A.snap) { leave(); toast('No game found with code ' + code); } }, 7000);
+}
+function guestPeers(){
+  if (!A.room) return;
+  const hp = A.room.peers().find(p => p.presence && p.presence.h === 1 && p.presence.g);
+  if (!hp) {
+    if (A.snap && !A.hostGone) { A.hostGone = true; $banner.hidden = false; $banner.style.background = ''; $banner.style.color = ''; $banner.textContent = 'The host left, so the game is over.'; }
+    return;
+  }
+  if (A.hostGone) { A.hostGone = false; $banner.hidden = true; }
+  const g = hp.presence.g, key = g.e + ':' + g.v;
+  if (key !== A.snapKey) { A.snapKey = key; clearTimeout(A.joinT); onSnap(g); }
+}
+
+function leave(){
+  clearInterval(A.tickT); clearTimeout(A.joinT);
+  if (A.room) { try { A.room.leave(); } catch (e) {} }
+  A.room = null; A.eng = null; A.host = false; A.hostGone = false; A.snapKey = '';
+  showHome();
+}
+
+// ---------- boot ----------
+drawTop(); showHome();
+(async function init(){
+  try { A.api = (window.claude && claude.use) ? await claude.use('room') : null; } catch (e) { A.api = null; }
+  try { A.assets = (window.claude && claude.use) ? await claude.use('assets') : null; } catch (e) { A.assets = null; }
+  if (A.mode === 'home' && showHome.sync) showHome.sync();
+  else if (A.snap && A.kind === 'lobby' && A.eng && !A.ui.hasAssets) { A.kind = ''; render(); }
+})();
+})();
+
+</script>
+</body>
+</html>
