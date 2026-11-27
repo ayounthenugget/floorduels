@@ -479,7 +479,7 @@ const store = {
   set(k, v, s){ try { (s ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
 };
 const uid = () => Math.random().toString(36).slice(2, 10);
-const fmt = ms => { ms = Math.max(0, ms); const s = ms / 1000; return s >= 60 ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : s.toFixed(1); };
+const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s); };
 const catInfo = (s, id) => CAT[id] || ((s && s.cx) || []).find(c => c.id === id) || {name: '?', ico: '❔'};
 function renderPic(el, pic){
   el.className = 'pic'; el.replaceChildren();
@@ -1003,6 +1003,8 @@ function leave(){
 }
 
 // ---------- boot ----------
+// Live clocks for everyone (guests have no engine loop of their own).
+setInterval(() => { if (A.ui && A.ui.ticker) A.ui.ticker(); }, 100);
 drawTop(); showHome();
 (async function init(){
   try { A.api = (window.claude && claude.use) ? await claude.use('room') : null; } catch (e) { A.api = null; }
